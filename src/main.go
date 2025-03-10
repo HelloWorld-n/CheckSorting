@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"CheckSorting/types"
+	"CheckSorting/utils"
 )
 
 type intensiveCalculationMeta struct {
@@ -47,31 +47,9 @@ func sendSortingRequest(url string, nRows int, nColumns int) {
 	defer resp.Body.Close()
 }
 
-func parseResponse(url string) (result []intensiveCalculationMeta, err error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println("Error retrieving Sorting Meta: ", err)
-		return
-	}
-	body, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		return
-	}
-	result = make([]intensiveCalculationMeta, 0)
-
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		fmt.Println("Error unmarshaling response body:", err)
-		return
-	}
-	return
-}
-
 func retrieveSortingMeta(url string, nRequestedSorts int) {
 	for {
-		parsedResp, err := parseResponse(url)
+		parsedResp, err := utils.FetchData[[]intensiveCalculationMeta](url)
 		if err != nil {
 			return
 		}
