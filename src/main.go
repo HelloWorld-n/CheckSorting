@@ -47,38 +47,44 @@ func sendSortingRequest(url string, nRows int, nColumns int) {
 	defer resp.Body.Close()
 }
 
+func parseResponse(url string) (result []intensiveCalculationMeta, err error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error retrieving Sorting Meta: ", err)
+		return
+	}
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+	result = make([]intensiveCalculationMeta, 0)
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		fmt.Println("Error unmarshaling response body:", err)
+		return
+	}
+	return
+}
+
 func retrieveSortingMeta(url string, nRequestedSorts int) {
 	for {
-		resp, err := http.Get(url)
+		parsedResp, err := parseResponse(url)
 		if err != nil {
-			fmt.Println("Error retrieving Sorting Meta: ", err)
 			return
 		}
-
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			fmt.Println("Error reading response body:", err)
-			return
-		}
-		var parsedResponse = make([]intensiveCalculationMeta, 0)
-
-		err = json.Unmarshal(body, &parsedResponse)
-		if err != nil {
-			fmt.Println("Error unmarshaling response body:", err)
-			return
-		}
-
 		time.Sleep(1 * time.Second)
-		if len(parsedResponse) == 2 {
+		if len(parsedResp) == 2 {
 			ok := true
-			for _, item := range parsedResponse {
+			for _, item := range parsedResp {
 				if item.SampleSize < uint64(nRequestedSorts) {
 					ok = false
 				}
 			}
 			if ok {
-				for _, item := range parsedResponse {
+				for _, item := range parsedResp {
 					fmt.Println("SortType", item.SortType)
 					fmt.Println("MinTimeTaken", item.MinTimeTaken)
 					fmt.Println("AverageTimeTaken", item.AverageTimeTaken)
